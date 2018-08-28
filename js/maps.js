@@ -2,12 +2,13 @@
 
 var map;
 var infowindow;
-
+var directionsService
+var directionsDisplay
 
 var pos;
 function initMap() {
-	var directionsService = new google.maps.DirectionsService;
-	var directionsDisplay = new google.maps.DirectionsRenderer;
+	directionsService = new google.maps.DirectionsService;
+	directionsDisplay = new google.maps.DirectionsRenderer;
 
 	var lineSymbol = {
 		path: google.maps.SymbolPath.CIRCLE,
@@ -76,6 +77,7 @@ function initMap() {
 
 	if (navigator.geolocation) {
 		navigator.geolocation.getCurrentPosition(function(position) {
+			console.log("geolocation successful")
 			pos = {
 				lat: position.coords.latitude,
 				lng: position.coords.longitude
@@ -100,9 +102,35 @@ function initMap() {
 
 			// directionsDisplay.setMap(map);
 		}, function() {
+			console.log("geolocation failed")
+			pos = {lat: 40.732994, lng: -73.998031};
+			var image = 'img/icon2.png';
+							
+			var beachMarker = new google.maps.Marker({
+				position: pos,
+				map: map,
+				icon: image
+			});
+
+
+			map.setCenter(pos);
+			loadRestaurants(map, pos);
 			// handleLocationError(true, infoWindow, map.getCenter());
 		});
 	} else {
+		console.log("geolocation failed")
+		pos = {lat: 40.732994, lng: -73.998031};
+		var image = 'img/icon2.png';
+						
+		var beachMarker = new google.maps.Marker({
+			position: pos,
+			map: map,
+			icon: image
+		});
+
+
+		map.setCenter(pos);
+		loadRestaurants(map, pos);
 		// Browser doesn't support Geolocation
 		// handleLocationError(false, infoWindow, map.getCenter());
 	}
@@ -110,7 +138,7 @@ function initMap() {
 	directionsDisplay.setMap(map);
 
 	var onChangeHandler = function() {
-		calculateAndDisplayRoute(directionsService, directionsDisplay, pos);
+		calculateAndDisplayPresetRoute(directionsService, directionsDisplay, pos);
 	};
 
 	// document.getElementById('start').addEventListener('change', onChangeHandler);
@@ -120,10 +148,24 @@ function initMap() {
 				
 } // end of initMap()
 
+function calculateAndDisplayPresetRoute(directionsService, directionsDisplay, pos) {
+	directionsService.route({
+		origin: pos,
+		destination: document.getElementById('end').value,
+		travelMode: 'DRIVING'
+	}, function(response, status) {
+		if (status === 'OK') {
+			directionsDisplay.setDirections(response);
+		} else {
+			window.alert('Directions request failed due to ' + status);
+		}
+	});
+}
+
 function calculateAndDisplayRoute(directionsService, directionsDisplay, pos, end) {
 	directionsService.route({
 		origin: pos,
-		destination: end, //document.getElementById('end').value,
+		destination: end, // document.getElementById('end').value,
 		travelMode: 'DRIVING'
 	}, function(response, status) {
 		if (status === 'OK') {
@@ -173,6 +215,6 @@ function createMarker(place) {
 		// infowindow.setContent(contentString);
 		infowindow.setContent(place.name);
 		infowindow.open(map, this);
-		// calculateAndDisplayRoute(directionsService, directionsDisplay, pos, place.geometry.location);
+		calculateAndDisplayRoute(directionsService, directionsDisplay, pos, place.geometry.location);
 	});
 }
